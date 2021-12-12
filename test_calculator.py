@@ -18,3 +18,6 @@ class TestCalculator:
 
     def test_division(self):
         assert 5 == calculator.division(10, 2)
+
+    def test_power(self):
+        assert 1000 == calculator.power(10, 3)

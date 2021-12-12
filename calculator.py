@@ -17,3 +17,7 @@ def multiply(first_term, second_term):
 
 def division(lhs, rhs):
     return lhs / rhs
+
+
+def power(lhs, rhs):
+    return lhs ** rhs
