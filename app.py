@@ -3,9 +3,11 @@ import signal
 import socket
 
 from flask import Flask
+from prometheus_flask_exporter import PrometheusMetrics
 from buzz import generator
 
 app = Flask(__name__)
+metrics = PrometheusMetrics(app)
 
 signal.signal(signal.SIGINT, lambda s, f: os._exit(0))
 
