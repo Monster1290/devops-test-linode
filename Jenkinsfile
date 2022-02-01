@@ -25,7 +25,11 @@ pipeline {
             }
 
             steps {
-                sh './Jenkins/scripts/docker_hub_check_commit_tag.sh'
+
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-cred', passwordVariable: 'DOCKER_HUB_PASS', usernameVariable: 'DOCKER_HUB_USER')]) {
+                    sh './Jenkins/scripts/docker_hub_check_commit_tag.sh'
+                }
+
                 docker.withRegistry('https://index.docker.io/v1/', 'docker-hub-cred') {
                     docker.build('monster1290/test-repo').push('${GIT_COMMIT}')
                 }
