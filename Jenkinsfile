@@ -13,7 +13,7 @@ pipeline {
 
         stage('tests') {
             steps {
-                pytest -v --cov
+                sh 'pytest -v --cov'
             }
         }
 
