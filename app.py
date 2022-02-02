@@ -2,6 +2,7 @@ import os
 import signal
 import socket
 import sys
+import threading
 
 from flask import Flask
 from prometheus_flask_exporter import PrometheusMetrics
@@ -22,7 +23,11 @@ def generate_buzz():
 
 
 if __name__ == "__main__":
+
     if '--build' in sys.argv:
-        signal.alarm(5)
+        t = threading.Timer(5, lambda: signal.raise_signal(signal.SIGINT))
+        t.start()
 
     app.run(host='0.0.0.0', port=8080)
+
+
