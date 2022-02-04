@@ -2,9 +2,9 @@
 
 image_id=$(docker stop app)
 
-if [[ $! -eq 1 ]]; then
+if [[ $! -eq 0 ]]; then
+  docker rm app
+  docker rmi "${image_id}"
+else
   exit 0
 fi
-
-docker rm app
-docker rmi "${image_id}"
