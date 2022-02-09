@@ -16,7 +16,15 @@ signal.signal(signal.SIGINT, lambda s, f: os._exit(0))
 
 @app.route("/")
 def generate_buzz():
-    page = '<html><body><h1>'
+    page = '<html>' \
+           '<style type="text/css">' \
+           '.center {' \
+           'position: fixed;' \
+           'top: 50%;' \
+           'transform: translate(-50%, -50%);' \
+           '}' \
+           '</style>' \
+           '<body><h1 class="center">'
     page += f'{generator.generate_buzz()} <br> This is done on {socket.gethostname()}'
     page += '</h1></body></html>'
     return page
