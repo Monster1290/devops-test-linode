@@ -36,6 +36,43 @@ pipeline {
             }
         }
 
+        stage("Deliver for development") {
+            agent {
+                label "staging"
+            }
+
+            when {
+                not {
+                	branch "main"
+                }
+                // Check that current execution made by user
+                expression { currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null }
+            }
+
+            steps {
+            	script {
+	                docker.image(AGENT_PYTHON_IMAGE).pull()
+	                def STAGING_PORT = sh(encoding: 'UTF-8', returnStdout: true, script: './Jenkins/scripts/get_free_service_port.sh').trim()
+	                echo "Staging port is $STAGING_PORT"
+	                docker.image(AGENT_PYTHON_IMAGE).inside(AGENT_IMAGE_ARGS + " -p $STAGING_PORT:8080"){
+	                    sh 'pip install -r requirements.txt'
+	                    sh '''
+	                        set -x
+	                        python app.py &
+	                        sleep 1
+	                        echo $! > .pidfile
+	                        set +x
+	                    '''
+	                    input message: 'Finished using the web site? (Click "Proceed" to continue)'
+	                    sh '''
+	                        set -x
+	                        kill $(cat .pidfile)
+	                    '''
+	                }
+	            }
+            }
+        }
+
         stage("deploy") {
             agent {
                 label "linux"
