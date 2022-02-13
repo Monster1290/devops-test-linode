@@ -53,25 +53,17 @@ pipeline {
             	script {
 	                docker.image(AGENT_PYTHON_IMAGE).pull()
 	                def STAGING_PORT = sh(encoding: 'UTF-8', returnStdout: true, script: './Jenkins/scripts/get_free_service_port.sh').trim()
-	                echo "Staging port is $STAGING_PORT"
+	                def STAGING_IP = sh(encoding: 'UTF-8', returnStdout: true, script: 'python3 ./Jenkins/scripts/get_host_ip.sh').trim()
 	                docker.image(AGENT_PYTHON_IMAGE).inside(AGENT_IMAGE_ARGS + " -p $STAGING_PORT:8080"){
 	                    sh 'pip install -r requirements.txt'
-	                    sh '''
-	                        set -x
-	                        python app.py &
-	                        sleep 1
-	                        echo $! > .pidfile
-	                        set +x
-	                    '''
+	                    sh 'python app.py &'
+	                    echo "Web is accessible via http://$STAGING_IP:$STAGING_PORT/"
 	                    input message: 'Finished using the web site? (Click "Proceed" to continue)'
-	                    sh '''
-	                        set -x
-	                        kill $(cat .pidfile)
-	                    '''
 	                }
 	            }
             }
         }
+
 
         stage("deploy") {
             agent {
