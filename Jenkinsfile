@@ -18,6 +18,7 @@ pipeline {
                 args AGENT_IMAGE_ARGS
                 reuseNode true
             } }
+
             steps {
                 sh "pip install -r requirements.txt"
                 sh "python app.py --build"
@@ -30,6 +31,7 @@ pipeline {
                 args AGENT_IMAGE_ARGS
                 reuseNode true
             } }
+
             steps {
                 sh "pip install -r requirements.txt"
                 sh "pytest -v --cov"
@@ -42,9 +44,7 @@ pipeline {
             }
 
             when {
-                not {
-                	branch "main"
-                }
+                not { branch "main" }
                 // Check that current execution made by user
                 expression { currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null }
             }
@@ -53,7 +53,7 @@ pipeline {
             	script {
 	                docker.image(AGENT_PYTHON_IMAGE).pull()
 	                def STAGING_PORT = sh(encoding: 'UTF-8', returnStdout: true, script: './Jenkins/scripts/get_free_service_port.sh').trim()
-	                def STAGING_IP = sh(encoding: 'UTF-8', returnStdout: true, script: 'python3 ./Jenkins/scripts/get_host_ip.sh').trim()
+	                def STAGING_IP = sh(encoding: 'UTF-8', returnStdout: true, script: 'python3 ./Jenkins/scripts/get_host_ip.py').trim()
 	                docker.image(AGENT_PYTHON_IMAGE).inside(AGENT_IMAGE_ARGS + " -p $STAGING_PORT:8080"){
 	                    sh 'pip install -r requirements.txt'
 	                    sh 'python app.py &'
