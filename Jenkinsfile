@@ -6,7 +6,7 @@ pipeline {
         AGENT_IMAGE_ARGS = "-u root --privileged"
         DOCKER_REGISTRY = "https://index.docker.io/v1/"
         DOCKER_HUB_REPO = "monster1290/test-repo"
-        PROD_SRV_ADDR = "192.168.88.6"
+        PROD_SRV_ADDR = "192.168.88.7"
         PROD_SRV_DOCKER_SOCKET = "tcp://${PROD_SRV_ADDR}:2375"
         GIT_COMMIT_FILE = "commit.txt"
     }
@@ -18,6 +18,7 @@ pipeline {
                 args AGENT_IMAGE_ARGS
                 reuseNode true
             } }
+
             steps {
                 sh "pip install -r requirements.txt"
                 sh "python app.py --build"
@@ -30,11 +31,39 @@ pipeline {
                 args AGENT_IMAGE_ARGS
                 reuseNode true
             } }
+
             steps {
                 sh "pip install -r requirements.txt"
                 sh "pytest -v --cov"
             }
         }
+
+        stage("Deliver for development") {
+            agent {
+                label "staging"
+            }
+
+            when {
+                not { branch "main" }
+                // Check that current execution made by user
+                expression { currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null }
+            }
+
+            steps {
+            	script {
+	                docker.image(AGENT_PYTHON_IMAGE).pull()
+	                def STAGING_PORT = sh(encoding: 'UTF-8', returnStdout: true, script: './Jenkins/scripts/get_free_service_port.sh').trim()
+	                def STAGING_IP = sh(encoding: 'UTF-8', returnStdout: true, script: 'python3 ./Jenkins/scripts/get_host_ip.py').trim()
+	                docker.image(AGENT_PYTHON_IMAGE).inside(AGENT_IMAGE_ARGS + " -p $STAGING_PORT:8080"){
+	                    sh 'pip install -r requirements.txt'
+	                    sh 'python app.py &'
+	                    echo "Web is accessible via http://$STAGING_IP:$STAGING_PORT/"
+	                    input message: 'Finished using the web site? (Click "Proceed" to continue)'
+	                }
+	            }
+            }
+        }
+
 
         stage("deploy") {
             agent {
