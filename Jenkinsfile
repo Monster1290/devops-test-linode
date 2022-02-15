@@ -6,7 +6,7 @@ pipeline {
         AGENT_IMAGE_ARGS = "-u root --privileged"
         DOCKER_REGISTRY = "https://index.docker.io/v1/"
         DOCKER_HUB_REPO = "monster1290/test-repo"
-        PROD_SRV_ADDR = "192.168.88.6"
+        PROD_SRV_ADDR = "192.168.88.7"
         PROD_SRV_DOCKER_SOCKET = "tcp://${PROD_SRV_ADDR}:2375"
         GIT_COMMIT_FILE = "commit.txt"
     }
