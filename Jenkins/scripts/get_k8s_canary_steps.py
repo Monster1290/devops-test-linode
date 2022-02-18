@@ -1,0 +1,39 @@
+import subprocess
+
+from kubernetes import client
+from kubernetes.client.rest import ApiException
+
+if __name__ == "__main__":
+    proxy = subprocess.Popen(["kubectl", "proxy"], stdout=subprocess.PIPE)
+    config = client.configuration.Configuration()
+    config.host = "127.0.0.1:8001"
+    api_client = client.ApiClient(configuration=config)
+    api = client.CustomObjectsApi(api_client=api_client)
+
+    # wait for output by proxy that means that proxy started serving
+    proxy.stdout.read(1)
+    try:
+        # FIX: get name input
+        canary_rollout = api.get_namespaced_custom_object(group="argoproj.io", version="v1alpha1", namespace="default",
+                                               plural="rollouts", name="rollouts-demo")
+    except ApiException as e:
+        print("Exception when calling CustomObjectsApi->get_namespaced_custom_object: %s\n" % e)
+        exit(1)
+
+    proxy.terminate()
+
+    canary_stages = [[]]
+    stage_index = 0
+    for step in canary_rollout["spec"]["strategy"]["canary"]["steps"]:
+        if "pause" in step and "duration" not in step["pause"]:
+            canary_stages.append([])
+            stage_index += 1
+
+        if "setWeight" in step:
+            canary_stages[stage_index].append(str(step["setWeight"]))
+
+    last_stage_index = len(canary_stages) - 1
+    canary_stages[last_stage_index].append("100")
+    canary_stages_str = list(map(lambda steps: " ".join(steps) + "\n", canary_stages))
+
+    print("".join(canary_stages_str))
