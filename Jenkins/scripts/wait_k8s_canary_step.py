@@ -1,3 +1,8 @@
+# Script that wait when desired rollout canary step (e.g. 80%) is reached
+# 1st parameter - desired step in percentage
+# 2nd parameter - name of the deployment in k8s cluster to watch
+# required env var: $KUBECONFIG - path to config file for kubectl command
+
 import subprocess
 import sys
 
@@ -5,7 +10,14 @@ from kubernetes import client, watch
 from kubernetes.client.rest import ApiException
 
 if __name__ == "__main__":
+
+    if len(sys.argv) != 3 or sys.argv[1] == '' or sys.argv[2] == '':
+        print("Missing one or more parameters. Exiting.")
+        exit(1)
+
     desired_step = int(sys.argv[1])
+    deployment_name = sys.argv[2]
+
     proxy = subprocess.Popen(["kubectl", "proxy"], stdout=subprocess.PIPE)
     config = client.configuration.Configuration()
     config.host = "127.0.0.1:8001"
@@ -17,9 +29,8 @@ if __name__ == "__main__":
     proxy.stdout.read(1)
 
     try:
-        # FIX: get name input
         canary_rollout = api.get_namespaced_custom_object(group="argoproj.io", version="v1alpha1", namespace="default",
-                                               plural="rollouts", name="rollouts-demo")
+                                                          plural="rollouts", name=deployment_name)
 
     except ApiException as e:
         print("Exception when calling CustomObjectsApi->get_namespaced_custom_object: %s\n" % e)
@@ -44,8 +55,7 @@ if __name__ == "__main__":
         etype = event["type"]
         name = event["object"]["metadata"]["name"]
 
-        # FIX: get name input
-        if (etype != "ADDED" or etype != "MODIFIED") and name != "rollouts-demo":
+        if (etype != "ADDED" or etype != "MODIFIED") and name != deployment_name:
             continue
 
         step_index = int(event["object"]["status"]["currentStepIndex"])
