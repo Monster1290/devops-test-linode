@@ -9,6 +9,7 @@ pipeline {
         PROD_SRV_ADDR = "192.168.88.7"
         PROD_SRV_DOCKER_SOCKET = "tcp://${PROD_SRV_ADDR}:2375"
         GIT_COMMIT_FILE = "commit.txt"
+        K8S_ROLLOUT_NAME = "demo-app"
     }
     
     stages {
@@ -86,12 +87,36 @@ pipeline {
                         docker.build(DOCKER_HUB_REPO).push(GIT_COMMIT)
                     }
 
-                    docker.withServer(PROD_SRV_DOCKER_SOCKET) {
-                        docker.withRegistry(DOCKER_REGISTRY, "docker-hub-cred") {
-                            docker.image("${DOCKER_HUB_REPO}:${GIT_COMMIT}").pull()
-                            sh "./Jenkins/scripts/stop_and_remove_image.sh"
-                            docker.image("${DOCKER_HUB_REPO}:${GIT_COMMIT}")
-                                .run("--name app --restart=always --detach -p 8080:8080")
+                    input message:"Should we start rollout process?"
+
+                    docker.image(AGENT_PYTHON_IMAGE).inside(AGENT_IMAGE_ARGS + "-v $(which kubectl):$(which kubectl) -v $(which kubectl-argo-rollouts):$(which kubectl-argo-rollouts)") {
+                        withCredentials([file(credentialsId: 'k8s-config', variable: 'KUBECONFIG')]) {
+                            sh "pip install kubernetes"
+
+                            import groovy.json.JsonSlurper
+                            def canary_stages_json = sh(encoding: 'UTF-8', returnStdout: true, script:"python3 ./Jenkins/scripts/get_k8s_canary_steps.py $K8S_ROLLOUT_NAME").trim()
+                            def canary_stages = new JsonSlurper().parseText(canary_stages_json)
+                            def stable_image = sh(encoding: 'UTF-8', returnStdout: true, script:"kubectl argo rollouts get rollouts $K8S_ROLLOUT_NAME | grep -m 1 stable | awk '{print $2}'")
+
+                            echo "Starting canary rollout process"
+                            sh "kubectl argo rollouts set image $K8S_ROLLOUT_NAME $K8S_ROLLOUT_NAME=${DOCKER_HUB_REPO}:${GIT_COMMIT}"
+
+                            for (canary_stage in canary_stages) {
+                                for (canary_step in canary_stage) {
+                                    sh "python3 ./Jenkins/scripts/wait_k8s_canary_step.py $canary_step $K8S_ROLLOUT_NAME"
+                                    echo "Canary rollout reached $canary_step\%"
+                                }
+
+                                input message: 'Promote rollout?', parameters: [choice(choices: ['Promote', 'Abort'], name: 'promote_choice')]
+
+                                if (promote_choice == 'Promote') {
+                                    sh "kubectl argo rollouts promote $K8S_ROLLOUT_NAME"
+                                } else {
+                                    sh "kubectl argo rollouts abort $K8S_ROLLOUT_NAME"
+                                    sh "kubectl argo rollouts set image $K8S_ROLLOUT_NAME $K8S_ROLLOUT_NAME=$stable_image"
+                                    break
+                                }
+                            }
                         }
                     }
                 }
