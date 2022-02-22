@@ -1,9 +1,16 @@
 import subprocess
+import sys
 
 from kubernetes import client
 from kubernetes.client.rest import ApiException
 
 if __name__ == "__main__":
+
+    if len(sys.argv) != 2:
+        print("Wrong number of input parameters. Required one parameter - name of deployment")
+
+    deployment_name = sys.argv[1]
+
     proxy = subprocess.Popen(["kubectl", "proxy"], stdout=subprocess.PIPE)
     config = client.configuration.Configuration()
     config.host = "127.0.0.1:8001"
@@ -15,7 +22,7 @@ if __name__ == "__main__":
     try:
         # FIX: get name input
         canary_rollout = api.get_namespaced_custom_object(group="argoproj.io", version="v1alpha1", namespace="default",
-                                               plural="rollouts", name="rollouts-demo")
+                                               plural="rollouts", name=deployment_name)
     except ApiException as e:
         print("Exception when calling CustomObjectsApi->get_namespaced_custom_object: %s\n" % e)
         exit(1)
