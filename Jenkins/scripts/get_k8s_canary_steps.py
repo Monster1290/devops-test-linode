@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 
@@ -41,6 +42,5 @@ if __name__ == "__main__":
 
     last_stage_index = len(canary_stages) - 1
     canary_stages[last_stage_index].append("100")
-    canary_stages_str = list(map(lambda steps: " ".join(steps) + "\n", canary_stages))
+    print(json.dumps(canary_stages))
 
-    print("".join(canary_stages_str))
