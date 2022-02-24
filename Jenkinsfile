@@ -96,6 +96,7 @@ pipeline {
                             def canary_stages_json = sh(encoding: 'UTF-8', returnStdout: true, script:"python3 ./Jenkins/scripts/get_k8s_canary_steps.py $K8S_ROLLOUT_NAME").trim()
                             def canary_stages = readJSON text:canary_stages_json
                             def stable_image = sh(encoding: 'UTF-8', returnStdout: true, script:"kubectl argo rollouts get rollouts $K8S_ROLLOUT_NAME | grep -m 1 stable | awk '{print \$2}'")
+                            def i = 0
 
                             echo "Starting canary rollout process"
                             sh "kubectl argo rollouts set image $K8S_ROLLOUT_NAME $K8S_ROLLOUT_NAME=${DOCKER_HUB_REPO}:${GIT_COMMIT}"
@@ -106,9 +107,14 @@ pipeline {
                                     echo "Canary rollout reached $canary_step %"
                                 }
 
-                                input message: 'Promote rollout?', parameters: [choice(choices: ['Promote', 'Abort'], name: 'promote_choice')]
+                                if (i == canary_stages.size() - 1) {
+                                    break
+                                }
 
-                                if (promote_choice == 'Promote') {
+                                i++
+                                def is_promote_rollout = input message: 'Promote rollout? [yes/no]', parameters: [booleanParam(defaultValue: false, name: "Promote")]
+
+                                if (is_promote_rollout) {
                                     sh "kubectl argo rollouts promote $K8S_ROLLOUT_NAME"
                                 } else {
                                     sh "kubectl argo rollouts abort $K8S_ROLLOUT_NAME"
