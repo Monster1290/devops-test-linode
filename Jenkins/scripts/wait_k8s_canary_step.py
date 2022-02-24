@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
     canary_rollout_steps = canary_rollout["spec"]["strategy"]["canary"]["steps"]
     desired_step_index = -1
-    if desired_step == "100":
+    if desired_step == 100:
         desired_step_index = len(canary_rollout_steps)
     else:
         for i in range(0, len(canary_rollout_steps)):
@@ -47,7 +47,7 @@ if __name__ == "__main__":
                 break
 
     if desired_step_index == -1:
-        print(f'Weight ${desired_step} not present in rollout deployment')
+        print(f'Weight {desired_step} not present in rollout deployment')
         exit(1)
 
     for event in w.stream(api.list_namespaced_custom_object, group="argoproj.io", version="v1alpha1",
