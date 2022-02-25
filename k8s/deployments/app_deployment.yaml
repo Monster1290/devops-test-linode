@@ -24,6 +24,8 @@ spec:
       labels:
         app: demo-app
     spec:
+      imagePullSecrets:
+      - name: regcred
       containers:
       - name: demo-app
         image: monster1290/test-repo
