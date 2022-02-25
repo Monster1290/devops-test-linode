@@ -19,6 +19,7 @@ def generate_buzz():
     page = '<html>' \
            '<style type="text/css">' \
            '.center {' \
+           'background: lightblue;' \
            'position: fixed;' \
            'top: 50%;' \
            'left: 50%;' \
