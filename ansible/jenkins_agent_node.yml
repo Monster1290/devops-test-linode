@@ -1,0 +1,5 @@
+- name: Provision jenkins agent node
+  hosts: all
+  roles:
+    - docker_install
+    - jenkins_agent

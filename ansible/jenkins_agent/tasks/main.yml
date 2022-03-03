@@ -1,0 +1,46 @@
+# tasks file for jenkins_agent
+---
+- name: Update apt cache
+  apt: update_cache=yes cache_valid_time=3600
+
+- name: Upgrade all apt packages
+  apt: upgrade=dist
+
+- name: Install JRE
+  apt:
+    name: openjdk-11-jre-headless
+    state: present
+    update_cache: yes
+
+- name: Create jenkins user
+  user:
+    name: jenkins
+    password: jenkins
+    home: "{{jenkins_home}}"
+    shell: "/bin/bash"
+    append: yes
+    groups:
+      - sudo
+      - docker
+
+- name: Create .ssh directory for jenkins
+  file:
+    path: "{{jenkins_home}}/.ssh"
+    state: directory
+
+- name: Copy SSH public key
+  copy:
+    src: jenkins_agent.pub
+    dest: "{{jenkins_home}}/.ssh/authorized_keys"
+    mode: 0600
+    owner: jenkins
+    group: jenkins
+
+- name: Disable SSH access via password
+  include_role:
+    name: willshersystems.sshd
+  vars:
+    sshd:
+      Match:
+      - Condition: "User jenkins"
+        PasswordAuthentication: no
