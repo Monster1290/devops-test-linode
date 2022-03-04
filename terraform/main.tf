@@ -40,17 +40,33 @@ resource "linode_instance" "cicd-server" {
   authorized_keys = [linode_sshkey.macbook.ssh_key]
   root_pass       = var.root_pass
   private_ip      = true
+
+  provisioner "local-exec" {
+    command = "ansible-playbook -u root -T 60 -i '${self.ip_address},' --private-key ${var.ssh_private_key} ../ansible/docker.yml"
+    environment = {
+      ANSIBLE_HOST_KEY_CHECKING = "False"
+      ANSIBLE_CONFIG = "../ansible/ansible.cfg"
+    }
+  }
 }
 
 resource "linode_instance" "test-server" {
   count           = 2
   image           = "linode/ubuntu20.04"
-  label           = "test-server"
+  label           = "test-server-${count.index + 1}"
   region          = var.region
   type            = "g6-standard-1"
   authorized_keys = [linode_sshkey.macbook.ssh_key]
   root_pass       = var.root_pass
   private_ip      = true
+
+  provisioner "local-exec" {
+    command = "ansible-playbook -u root -T 60 -i '${self.ip_address},' --private-key ${var.ssh_private_key} ../ansible/jenkins_agent_node.yml"
+    environment = {
+      ANSIBLE_HOST_KEY_CHECKING = "False"
+      ANSIBLE_CONFIG = "../ansible/ansible.cfg"
+    }
+  }
 }
 
 resource "linode_instance" "staging-server" {
@@ -75,7 +91,7 @@ resource "linode_instance" "staging-server" {
 //Export this cluster's attributes
 output "kubeconfig" {
   value     = linode_lke_cluster.test_lke.kubeconfig
-  sensitive = true
+  //sensitive = true
 }
 
 output "api_endpoints" {
