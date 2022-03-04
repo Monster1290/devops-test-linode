@@ -1,0 +1,4 @@
+- name: Install docker on node
+  hosts: all
+  roles:
+    - docker_install

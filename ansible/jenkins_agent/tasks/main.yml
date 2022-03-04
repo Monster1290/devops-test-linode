@@ -1,14 +1,21 @@
 # tasks file for jenkins_agent
 ---
-- name: Update apt cache
-  apt: update_cache=yes cache_valid_time=3600
+- name: Add an apt signing key for k8s
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
 
-- name: Upgrade all apt packages
-  apt: upgrade=dist
+- name: Add k8s apt repository
+  apt_repository:
+    repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
 
-- name: Install JRE
+- name: Install dependencies
   apt:
-    name: openjdk-11-jre-headless
+    name:
+    - apt-transport-https
+    - openjdk-11-jre-headless
+    - kubectl
     state: present
     update_cache: yes
 
