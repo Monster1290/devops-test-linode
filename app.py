@@ -18,8 +18,10 @@ signal.signal(signal.SIGINT, lambda s, f: os._exit(0))
 def generate_buzz():
     page = '<html>' \
            '<style type="text/css">' \
-           '.center {' \
+           'body {' \
            'background: lightblue;' \
+           '}' \
+           '.center {' \
            'position: fixed;' \
            'top: 50%;' \
            'left: 50%;' \
