@@ -1,2 +1,11 @@
-# EDU-CalculatorLibrary
-Educational purpose repo for tutorial https://realpython.com/python-continuous-integration/
+# DevOps test with linode provider
+Educational purpose repo. Contains:
+1. Simple python flask app with Prometheus exporter
+2. Tests for simple module "buzz generator"
+3. Simple dockerfile to build image
+4. Terraform infrastructure description for Linode provider
+5. Ansible playbook to setup Jenkins slave nodes
+6. Jenkins multibranch pipline.
+   1. Build and test on each push for every branch
+   2. On manual execution for given branch launches app on a staging node
+   3. On push to main branch makes artifact (image), pushes artifact to registry and starts new canary rollout with that artifact
